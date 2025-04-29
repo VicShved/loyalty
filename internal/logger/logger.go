@@ -1,8 +1,8 @@
 package logger
 
-import (
-	"go.uber.org/zap"
-)
+import "go.uber.org/zap"
+
+// "go.uber.org/zap"
 
 var Log *zap.Logger = zap.NewNop()
 

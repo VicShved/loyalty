@@ -1,14 +1,6 @@
 package common
 
-import (
-	"github.com/golang-jwt/jwt/v4"
-)
-
-// type TypeUserID string
-
-// func (t TypeUserID) String() string {
-// 	return fmt.Sprint(string(t))
-// }
+import "github.com/golang-jwt/jwt/v4"
 
 type CustClaims struct {
 	jwt.RegisteredClaims
