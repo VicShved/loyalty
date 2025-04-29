@@ -36,23 +36,23 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		//  если нет куки, то создаю новую
 		if err == http.ErrNoCookie {
 			logger.Log.Debug("ErrNoCookie")
-			userID, _ = common.GetNewUUID()
-			setAuthCook(w, &userID)
+			// userID, _ = common.GetNewUUID()
+			// setAuthCook(w, &userID)
 		} else {
 			token, userID, _ = parseTokenUserID(cook.Value)
-			// Если токен не валидный,  то создаю нвый userID
+			// Если токен не валидный,  то создаю нoвый userID
 			if !token.Valid {
 				logger.Log.Debug("Not valid token")
-				userID, _ = common.GetNewUUID()
-				setAuthCook(w, &userID)
+				// userID, _ = common.GetNewUUID()
+				// setAuthCook(w, &userID)
 			}
 		}
 		// Если кука не содержит ид пользователя, то возвращаю 401
-		if userID == "" {
-			logger.Log.Debug("Empty userID")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+		// if userID == "" {
+		// 	logger.Log.Debug("Empty userID")
+		// 	w.WriteHeader(http.StatusUnauthorized)
+		// 	return
+		// }
 		logger.Log.Debug("User ", zap.String("ID", string(userID)))
 		// добавляю userID в контекст
 		ctx := context.WithValue(r.Context(), common.ContextUser, userID)
