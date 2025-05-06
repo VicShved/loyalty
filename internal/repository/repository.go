@@ -4,33 +4,18 @@ import (
 	"errors"
 )
 
-type BalanceType struct {
-	Accural   string `json:"current"`
-	Withdrawn string `json:"withdrawn"`
-}
-
-type OrderAccuralType struct {
-	Order       string `json:"number"`
-	Status      string `json:"status"`
-	Accural     string `json:"accural"`
-	Uploaded_at string `json:"uploaded_at"`
-}
-
-type OrderWithdrawType struct {
-	Order        string `json:"order"`
-	Withdraw     string `json:"sum"`
-	Processed_at string `json:"processed_at"`
-}
-
 type RepoInterface interface {
-	Register(login string, hashPassword string) (string, error)
-	Login(login string, hashPassword string) (string, error)
-	PostOrders(user_id string, order_id string) error
-	GetOrders(user_id string) (*[]OrderAccuralType, error)
-	GetBalance(user_id string) (BalanceType, error)
-	PostWithdraw(user_id string, order_id string, sum float64) (string, error)
-	GetWithdrawals(user_id string) (float64, error)
+	Register(login string, hashPassword string) (uint, error)
+	Login(login string, hashPassword string) (uint, error)
+	SaveOrder(orderNumber string, userID uint) (Order, bool, error)
+	GetOrders(userID uint) (*[]Order, error)
+	// PostOrders(user_id string, order_id string) error
+	// GetBalance(user_id string) (BalanceType, error)
+	// PostWithdraw(user_id string, order_id string, sum float64) (string, error)
+	// GetWithdrawals(user_id string) (float64, error)
 	Ping() error
 }
 
-var ErrPKConflict = errors.New("PK conflict")
+var ErrLoginConflict = errors.New("Login conflict")
+var ErrLoginPassword = errors.New("Login/Password error")
+var ErrOrderNumberUserConflict = errors.New("OrderNumber another user conflict")

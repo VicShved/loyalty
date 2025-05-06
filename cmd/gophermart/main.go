@@ -25,16 +25,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	logger.Log.Info("Connect to db", zap.String("DSN", config.DBDSN))
 
+	orderChan := make(chan string, 1000) // TODO 1000 replace to config
+	defer close(orderChan)
+
 	// Bussiness layer (empty)
-	serv := service.GetService(repo, config.BaseURL)
+	serv := service.GetService(repo, config.AccuralSystemAddress, &orderChan)
+
 	// Handlers
 	handler := handler.GetHandler(serv)
 
 	// Middlewares chain
 	middlewares := []func(http.Handler) http.Handler{
-		middware.AuthMiddleware,
+		middware.AuthMiddlewareHeader,
 		middware.Logger,
 		middware.GzipMiddleware,
 	}
@@ -44,7 +49,7 @@ func main() {
 
 	// Run server
 	server := new(common.Server)
-	err = server.Run(config.ServerAddress, router)
+	err = server.Run(config.RunAddress, router)
 	if err != nil {
 		log.Fatal(err)
 	}

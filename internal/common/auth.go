@@ -4,7 +4,7 @@ import "github.com/golang-jwt/jwt/v4"
 
 type CustClaims struct {
 	jwt.RegisteredClaims
-	UserID string
+	UserID uint
 }
 
 type contextKey int
@@ -13,17 +13,17 @@ const (
 	ContextUser contextKey = iota
 )
 
-var AuthorizationCookName = "Authorization"
+var AuthorizationName = "Authorization"
 var SigningMethod = jwt.SigningMethodHS512
 
-func GetJWTTokenString(userID *string) (string, error) {
+func GetJWTTokenString(userID uint) (string, error) {
 	claim := CustClaims{
-		UserID: *userID,
+		UserID: userID,
 	}
 	token := jwt.NewWithClaims(SigningMethod, claim)
 	tokenStr, err := token.SignedString([]byte(ServerConfig.SecretKey))
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return tokenStr, err
 }

@@ -10,16 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func setAuthCook(w http.ResponseWriter, userID *string) {
-
-	token, _ := common.GetJWTTokenString(userID)
-	http.SetCookie(w, &http.Cookie{
-		Name:  common.AuthorizationCookName,
-		Value: token,
-	})
-}
-
-func parseTokenUserID(tokenStr string) (*jwt.Token, string, error) {
+func parseTokenUserID(tokenStr string) (*jwt.Token, uint, error) {
 	claims := &common.CustClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(common.ServerConfig.SecretKey), nil
@@ -28,32 +19,47 @@ func parseTokenUserID(tokenStr string) (*jwt.Token, string, error) {
 }
 
 // auth middleware
-func AuthMiddleware(next http.Handler) http.Handler {
+func AuthMiddlewareCookie(next http.Handler) http.Handler {
 	authFunc := func(w http.ResponseWriter, r *http.Request) {
-		var userID string
+		var userID uint
 		var token *jwt.Token
-		cook, err := r.Cookie(common.AuthorizationCookName)
-		//  если нет куки, то создаю новую
+		cook, err := r.Cookie(common.AuthorizationName)
 		if err == http.ErrNoCookie {
 			logger.Log.Debug("ErrNoCookie")
-			// userID, _ = common.GetNewUUID()
-			// setAuthCook(w, &userID)
 		} else {
 			token, userID, _ = parseTokenUserID(cook.Value)
+			logger.Log.Debug("AuthMiddleware", zap.Any("token.Claims", token.Claims), zap.String("cookie", cook.Value))
 			// Если токен не валидный,  то создаю нoвый userID
 			if !token.Valid {
 				logger.Log.Debug("Not valid token")
-				// userID, _ = common.GetNewUUID()
-				// setAuthCook(w, &userID)
+				userID = 0
 			}
 		}
-		// Если кука не содержит ид пользователя, то возвращаю 401
-		// if userID == "" {
-		// 	logger.Log.Debug("Empty userID")
-		// 	w.WriteHeader(http.StatusUnauthorized)
-		// 	return
-		// }
-		logger.Log.Debug("User ", zap.String("ID", string(userID)))
+		logger.Log.Debug("User ", zap.Uint("userID", userID))
+		// добавляю userID в контекст
+		ctx := context.WithValue(r.Context(), common.ContextUser, userID)
+		// Вызываю след.обработчик
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+	return http.HandlerFunc(authFunc)
+}
+
+func AuthMiddlewareHeader(next http.Handler) http.Handler {
+	authFunc := func(w http.ResponseWriter, r *http.Request) {
+		var userID uint
+		var token *jwt.Token
+		tokenString := r.Header.Get(common.AuthorizationName)
+		if tokenString == "" {
+			logger.Log.Debug("ErrNoAuthHeader")
+		} else {
+			token, userID, _ = parseTokenUserID(tokenString)
+			logger.Log.Debug("AuthMiddleware", zap.Any("token.Claims", token.Claims), zap.String("cookie", tokenString))
+			if !token.Valid {
+				logger.Log.Debug("Not valid token")
+				userID = 0
+			}
+		}
+		logger.Log.Debug("User ", zap.Uint("userID", userID))
 		// добавляю userID в контекст
 		ctx := context.WithValue(r.Context(), common.ContextUser, userID)
 		// Вызываю след.обработчик
