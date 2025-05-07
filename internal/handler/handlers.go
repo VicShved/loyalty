@@ -64,7 +64,7 @@ func (h Handler) InitRouter(mdwr []func(http.Handler) http.Handler) *chi.Mux {
 	router.Post("/api/user/login", h.PostLogin)
 	router.Post("/api/user/orders", h.PostOrders)
 	router.Get("/api/user/orders", h.GetOrders)
-	// router.Get("/api/user/balance", h.GetBalance)
+	router.Get("/api/user/balance", h.GetBalance)
 	// router.Post("/api/user/balance/withdraw", h.PostWithDraw)
 	// router.Get("/api/user/withdrawals", h.GetWithDrawals)
 	router.Get("/api/ping", h.PingDB)
@@ -202,12 +202,35 @@ func (h Handler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	logger.Log.Debug("", zap.String("response", string(respData)))
 }
 
-// func (h Handler) GetBalance(w http.ResponseWriter, r *http.Request) {
-// 	// Вытаскиваю userID из контекста
-// 	userID := r.Context().Value(common.ContextUser).(string)
-// 	logger.Log.Debug("Context User ", zap.Any("ID", userID))
+func (h Handler) GetBalance(w http.ResponseWriter, r *http.Request) {
+	// Вытаскиваю userID из контекста
+	userID := r.Context().Value(common.ContextUser).(uint)
+	logger.Log.Debug("Context User ", zap.Any("ID", userID))
 
-// }
+	if userID == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	balance, err := h.serv.GetBalance(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	respData, err := json.Marshal(balance)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	lenth, err := w.Write(respData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Length", strconv.Itoa(lenth))
+	logger.Log.Debug("", zap.String("response", string(respData)))
+
+}
 
 // func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
 // 	// Вытаскиваю userID из контекста

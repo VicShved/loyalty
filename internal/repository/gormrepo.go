@@ -112,17 +112,27 @@ func (r GormRepository) GetOrders(userID uint) (*[]Order, error) {
 	var orders []Order
 	result := r.DB.WithContext(ctx).Order("uploaded_at desc").Where("user_id = ?", userID).Find(&orders)
 	logger.Log.Debug("", zap.Any("orders", orders))
-	// if result.Error != nil {
-	// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-	// 		return Order{}, nil
-	// 	}
 	return &orders, result.Error
 }
 
-// func (r GormRepository) GetBalance() {
-// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-// 	defer cancel()
-// }
+func (r GormRepository) GetBalance(userID uint) (BalanceType, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	var transactions []Transaction
+	var current float32
+	var withdrawn float32
+	result := r.DB.WithContext(ctx).Table("transactions").Where(`"transactions"."order_id" IN (?)`, r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Scan(&transactions)
+	if result.Error != nil {
+		return BalanceType{}, result.Error
+	}
+	for _, trans := range transactions {
+		current += trans.Value
+		if trans.TransactionType == "w" {
+			withdrawn += trans.Value
+		}
+	}
+	return BalanceType{Current: current, Withdrawn: withdrawn}, nil
+}
 
 // func (r GormRepository) PostWithdraw() {
 // 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

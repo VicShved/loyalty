@@ -60,3 +60,9 @@ func (s *ShortenService) GetOrders(userID uint) (*[]repository.Order, error) {
 	return orders, err
 
 }
+
+func (s *ShortenService) GetBalance(userID uint) (repository.BalanceType, error) {
+	balance, err := (*s).repo.GetBalance(userID)
+	return balance, err
+
+}
