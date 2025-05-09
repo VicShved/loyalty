@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-type BalanceType struct {
+type BalanceWithDrawnType struct {
 	Current   float32 `json:"current"`
 	Withdrawn float32 `json:"withdrawn"`
 }
@@ -14,7 +14,9 @@ type RepoInterface interface {
 	Login(login string, hashPassword string) (uint, error)
 	SaveOrder(orderNumber string, userID uint) (Order, bool, error)
 	GetOrders(userID uint) (*[]Order, error)
-	GetBalance(user_id uint) (BalanceType, error)
+	GetBalanceWithDrawn(user_id uint) (BalanceWithDrawnType, error)
+	GetBalance(user_id uint) (float32, error)
+	SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error)
 	// PostWithdraw(user_id string, order_id string, sum float64) (string, error)
 	// GetWithdrawals(user_id string) (float64, error)
 	Ping() error

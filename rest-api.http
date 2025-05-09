@@ -53,4 +53,14 @@ Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjF9.PMeum23XZvp
 # Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjh9.6Z3ybXPRbHt4Cro9SbPFCo3B5ltRp0MdptMiX3_OV2tOADoBZvoBqLwPDiFDOTOl0z8XymHzJLmfZFp4w17DiA
 # Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
 
+###
+POST http://localhost:8080/api/user/balance/withdraw
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjF9.PMeum23XZvpp86IQAWZr8Kjhgm0InvCZqdt1ECffiFn14FC9TUwDDbXLAHDuBnr1s20yinb1Nq8ir_b31kz0hA
+# Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjh9.6Z3ybXPRbHt4Cro9SbPFCo3B5ltRp0MdptMiX3_OV2tOADoBZvoBqLwPDiFDOTOl0z8XymHzJLmfZFp4w17DiA
+# Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
 
+{
+    "order": "2377225624",
+    "sum": 1
+} 

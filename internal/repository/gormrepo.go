@@ -115,7 +115,7 @@ func (r GormRepository) GetOrders(userID uint) (*[]Order, error) {
 	return &orders, result.Error
 }
 
-func (r GormRepository) GetBalance(userID uint) (BalanceType, error) {
+func (r GormRepository) GetBalanceWithDrawn(userID uint) (BalanceWithDrawnType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	var transactions []Transaction
@@ -123,7 +123,7 @@ func (r GormRepository) GetBalance(userID uint) (BalanceType, error) {
 	var withdrawn float32
 	result := r.DB.WithContext(ctx).Table("transactions").Where(`"transactions"."order_id" IN (?)`, r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Scan(&transactions)
 	if result.Error != nil {
-		return BalanceType{}, result.Error
+		return BalanceWithDrawnType{}, result.Error
 	}
 	for _, trans := range transactions {
 		current += trans.Value
@@ -131,7 +131,41 @@ func (r GormRepository) GetBalance(userID uint) (BalanceType, error) {
 			withdrawn += trans.Value
 		}
 	}
-	return BalanceType{Current: current, Withdrawn: withdrawn}, nil
+	return BalanceWithDrawnType{Current: current, Withdrawn: withdrawn}, nil
+}
+
+func (r GormRepository) GetBalance(userID uint) (float32, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	var current float32
+	result := r.DB.WithContext(ctx).Table("transactions").Where(`"transactions"."order_id" IN (?)`, r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Select(`Coalesce(sum("transactions"."value"), 0) as sm`).Pluck("sm", &current)
+	if result.Error != nil {
+		return current, result.Error
+	}
+	return current, nil
+}
+
+func (r GormRepository) SaveWithDraw(userID uint, orderNumber string, withDrawSum float32) (float32, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	var order Order
+	result := r.DB.WithContext(ctx).Where("order_number = ? AND user_id = ?", orderNumber, userID).First(&order)
+	logger.Log.Debug("", zap.Any("order", order))
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			// Если заказ у другого пользователя
+			return 0, ErrOrderNumberUserConflict
+		}
+		return 0, result.Error
+	}
+
+	result = r.DB.WithContext(ctx).Create(&Transaction{OrderID: order.ID, Value: withDrawSum})
+
+	if result.Error != nil {
+
+	}
+	return 0, result.Error // todo нужна проверка на сгккуте >=0
+
 }
 
 // func (r GormRepository) PostWithdraw() {

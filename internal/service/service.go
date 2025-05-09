@@ -61,8 +61,18 @@ func (s *ShortenService) GetOrders(userID uint) (*[]repository.Order, error) {
 
 }
 
-func (s *ShortenService) GetBalance(userID uint) (repository.BalanceType, error) {
-	balance, err := (*s).repo.GetBalance(userID)
+func (s *ShortenService) GetBalanceWithDrawn(userID uint) (repository.BalanceWithDrawnType, error) {
+	balance, err := (*s).repo.GetBalanceWithDrawn(userID)
 	return balance, err
 
+}
+
+func (s *ShortenService) GetBalance(userID uint) (float32, error) {
+	balance, err := (*s).repo.GetBalance(userID)
+	return balance, err
+}
+
+func (s *ShortenService) SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error) {
+	current, err := (*s).repo.SaveWithDraw(userID, orderID, -withDrawSum)
+	return current, err
 }

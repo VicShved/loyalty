@@ -65,7 +65,7 @@ func (h Handler) InitRouter(mdwr []func(http.Handler) http.Handler) *chi.Mux {
 	router.Post("/api/user/orders", h.PostOrders)
 	router.Get("/api/user/orders", h.GetOrders)
 	router.Get("/api/user/balance", h.GetBalance)
-	// router.Post("/api/user/balance/withdraw", h.PostWithDraw)
+	router.Post("/api/user/balance/withdraw", h.PostWithDraw)
 	// router.Get("/api/user/withdrawals", h.GetWithDrawals)
 	router.Get("/api/ping", h.PingDB)
 	return router
@@ -212,7 +212,7 @@ func (h Handler) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	balance, err := h.serv.GetBalance(userID)
+	balance, err := h.serv.GetBalanceWithDrawn(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -232,12 +232,59 @@ func (h Handler) GetBalance(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
-// 	// Вытаскиваю userID из контекста
-// 	userID := r.Context().Value(common.ContextUser).(string)
-// 	logger.Log.Debug("Context User ", zap.Any("ID", userID))
+type orderWithDrawSum struct {
+	Order string  `json:"order"`
+	Sum   float32 `json:"sum"`
+}
 
-// }
+func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
+	// Вытаскиваю userID из контекста
+	userID := r.Context().Value(common.ContextUser).(uint)
+	logger.Log.Debug("Context User ", zap.Any("ID", userID))
+	if userID == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	var orderSum orderWithDrawSum
+	body, _ := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	err := json.Unmarshal(body, &orderSum)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if !isOnlyDigits(orderSum.Order) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	balance, err := h.serv.GetBalance(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if (balance - orderSum.Sum) < 0 { // todo may be balabce <0 if goroutine
+		w.WriteHeader(http.StatusPaymentRequired)
+		return
+	}
+	logger.Log.Debug("", zap.Float32("balance", balance))
+
+	current, err := h.serv.SaveWithDraw(userID, orderSum.Order, orderSum.Sum)
+	if err != nil {
+		if errors.Is(err, repository.ErrOrderNumberUserConflict) {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if current < 0 {
+		w.WriteHeader(http.StatusPaymentRequired)
+		return
+	}
+
+}
 
 // func (h Handler) GetWithDrawals(w http.ResponseWriter, r *http.Request) {
 // 	// Вытаскиваю userID из контекста
