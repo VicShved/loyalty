@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/VicShved/loyalty/internal/accrual"
 	"github.com/VicShved/loyalty/internal/common"
 	"github.com/VicShved/loyalty/internal/handler"
 	"github.com/VicShved/loyalty/internal/logger"
@@ -28,7 +29,7 @@ func main() {
 
 	logger.Log.Info("Connect to db", zap.String("DSN", config.DBDSN))
 
-	orderChan := make(chan string, 1000) // TODO 1000 replace to config
+	orderChan := make(chan accrual.OrderUser, 100) // TODO 100 replace to config
 	defer close(orderChan)
 
 	// Bussiness layer (empty)

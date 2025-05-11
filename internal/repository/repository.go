@@ -17,8 +17,7 @@ type RepoInterface interface {
 	GetBalanceWithDrawn(user_id uint) (BalanceWithDrawnType, error)
 	GetBalance(user_id uint) (float32, error)
 	SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error)
-	// PostWithdraw(user_id string, order_id string, sum float64) (string, error)
-	// GetWithdrawals(user_id string) (float64, error)
+	GetWithdrawals(userID uint) (*[]Transaction, error)
 	Ping() error
 }
 

@@ -1,6 +1,9 @@
 package service
 
 import (
+	"time"
+
+	"github.com/VicShved/loyalty/internal/accrual"
 	"github.com/VicShved/loyalty/internal/common"
 	"github.com/VicShved/loyalty/internal/logger"
 	"github.com/VicShved/loyalty/internal/repository"
@@ -25,10 +28,16 @@ type UserURLRespJSON struct {
 type ShortenService struct {
 	repo           repository.RepoInterface
 	accrualAddress string
-	orderChan      chan string
+	orderChan      chan accrual.OrderUser
 }
 
-func GetService(repo repository.RepoInterface, accrualAddress string, orderChan *chan string) *ShortenService {
+type WithDrawTransaction struct {
+	OrderNumber string    `json:"order"`
+	Sum         float32   `json:"sum"`
+	ProcessedAt time.Time `json:"processed_at"`
+}
+
+func GetService(repo repository.RepoInterface, accrualAddress string, orderChan *chan accrual.OrderUser) *ShortenService {
 	return &ShortenService{repo: repo, accrualAddress: accrualAddress, orderChan: *orderChan}
 }
 
@@ -49,8 +58,8 @@ func (s *ShortenService) Login(login string, password string) (uint, error) {
 
 func (s *ShortenService) SaveOrder(orderNumber string, userID uint) (repository.Order, bool, error) {
 	order, isNew, err := (*s).repo.SaveOrder(orderNumber, userID)
-	if isNew {
-		s.orderChan <- order.OrderNumber
+	if (isNew) && (err != nil) {
+		s.orderChan <- accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
 	}
 	return order, isNew, err
 }
@@ -64,7 +73,6 @@ func (s *ShortenService) GetOrders(userID uint) (*[]repository.Order, error) {
 func (s *ShortenService) GetBalanceWithDrawn(userID uint) (repository.BalanceWithDrawnType, error) {
 	balance, err := (*s).repo.GetBalanceWithDrawn(userID)
 	return balance, err
-
 }
 
 func (s *ShortenService) GetBalance(userID uint) (float32, error) {
@@ -75,4 +83,13 @@ func (s *ShortenService) GetBalance(userID uint) (float32, error) {
 func (s *ShortenService) SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error) {
 	current, err := (*s).repo.SaveWithDraw(userID, orderID, -withDrawSum)
 	return current, err
+}
+
+func (s *ShortenService) GetWithdrawTransactions(userID uint) (*[]WithDrawTransaction, error) {
+	transactions, err := s.repo.GetWithdrawals(userID)
+	var results []WithDrawTransaction
+	for _, transaction := range *transactions {
+		results = append(results, WithDrawTransaction{Sum: transaction.Value, ProcessedAt: transaction.ProcessedAt})
+	}
+	return &results, err
 }

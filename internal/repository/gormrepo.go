@@ -148,6 +148,15 @@ func (r GormRepository) GetBalance(userID uint) (float32, error) {
 func (r GormRepository) SaveWithDraw(userID uint, orderNumber string, withDrawSum float32) (float32, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+	if err := tx.Error; err != nil {
+		return 0, err
+	}
 	var order Order
 	result := r.DB.WithContext(ctx).Where("order_number = ? AND user_id = ?", orderNumber, userID).First(&order)
 	logger.Log.Debug("", zap.Any("order", order))
@@ -158,22 +167,28 @@ func (r GormRepository) SaveWithDraw(userID uint, orderNumber string, withDrawSu
 		}
 		return 0, result.Error
 	}
-
-	result = r.DB.WithContext(ctx).Create(&Transaction{OrderID: order.ID, Value: withDrawSum})
-
+	result = r.DB.WithContext(ctx).Create(&Transaction{OrderID: order.ID, Value: withDrawSum, TransactionType: "w"})
 	if result.Error != nil {
-
+		return 0, result.Error
 	}
-	return 0, result.Error // todo нужна проверка на сгккуте >=0
+	var current float32
+	result = r.DB.WithContext(ctx).Table("transactions").Where(`"transactions"."order_id" IN (?)`, r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Select(`Coalesce(sum("transactions"."value"), 0) as sm`).Pluck("sm", &current)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	if (current - withDrawSum) < 0 {
+		tx.Rollback()
+		return current, nil
+	}
+	err := tx.Commit().Error
+	return current, err
 
 }
 
-// func (r GormRepository) PostWithdraw() {
-// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-// 	defer cancel()
-// }
-
-// func (r GormRepository) PostWithdrawals() {
-// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-// 	defer cancel()
-// }
+func (r GormRepository) GetWithdrawals(userID uint) (*[]Transaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	var withdrawals []Transaction
+	result := r.DB.WithContext(ctx).Table("transactions").Order(`"transactions"."processed_at" desc`).Where(`"transactions"."transaction_type" = ? AND "transactions"."order_id" IN (?)`, "w", r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Find(&withdrawals)
+	return &withdrawals, result.Error
+}

@@ -53,7 +53,7 @@ func AuthMiddlewareHeader(next http.Handler) http.Handler {
 			logger.Log.Debug("ErrNoAuthHeader")
 		} else {
 			token, userID, _ = parseTokenUserID(tokenString)
-			logger.Log.Debug("AuthMiddleware", zap.Any("token.Claims", token.Claims), zap.String("cookie", tokenString))
+			logger.Log.Debug("AuthMiddleware", zap.Any("token.Claims", token.Claims), zap.String("token", tokenString))
 			if !token.Valid {
 				logger.Log.Debug("Not valid token")
 				userID = 0

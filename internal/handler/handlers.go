@@ -66,7 +66,7 @@ func (h Handler) InitRouter(mdwr []func(http.Handler) http.Handler) *chi.Mux {
 	router.Get("/api/user/orders", h.GetOrders)
 	router.Get("/api/user/balance", h.GetBalance)
 	router.Post("/api/user/balance/withdraw", h.PostWithDraw)
-	// router.Get("/api/user/withdrawals", h.GetWithDrawals)
+	router.Get("/api/user/withdrawals", h.GetWithdrawals)
 	router.Get("/api/ping", h.PingDB)
 	return router
 }
@@ -286,9 +286,31 @@ func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// func (h Handler) GetWithDrawals(w http.ResponseWriter, r *http.Request) {
-// 	// Вытаскиваю userID из контекста
-// 	userID := r.Context().Value(common.ContextUser).(string)
-// 	logger.Log.Debug("Context User ", zap.Any("ID", userID))
+func (h Handler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
+	// Вытаскиваю userID из контекста
+	userID := r.Context().Value(common.ContextUser).(uint)
+	logger.Log.Debug("Context User ", zap.Any("ID", userID))
+	if userID == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
-// }
+	w.Header().Set("Content-Type", "application/json")
+	transactions, err := h.serv.GetWithdrawTransactions(userID)
+	if len(*transactions) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	respData, err := json.Marshal(transactions)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	lenth, err := w.Write(respData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Length", strconv.Itoa(lenth))
+	logger.Log.Debug("", zap.String("response", string(respData)))
+}

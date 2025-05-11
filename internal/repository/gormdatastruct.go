@@ -2,19 +2,22 @@ package repository
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
+type Model struct {
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+}
+
 type User struct {
-	gorm.Model
+	Model
 	Login        string `gorm:"unique;not null"`
 	HashPassword string `gorm:"type:bytes"`
 	Orders       []Order
 }
 
 type Order struct {
-	gorm.Model
+	Model
 	OrderNumber  string `gorm:"unique;not null"`
 	UserID       uint
 	Transactions []Transaction
@@ -23,8 +26,9 @@ type Order struct {
 }
 
 type Transaction struct {
-	gorm.Model
+	Model
 	OrderID         uint    `gorm:"not null"`
 	TransactionType string  `gorm:"size:1"`
 	Value           float32 `gorm:"type:numeric(8,2)"`
+	ProcessedAt     time.Time
 }
