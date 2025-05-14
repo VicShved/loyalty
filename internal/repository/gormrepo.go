@@ -106,12 +106,12 @@ func (r GormRepository) SaveOrder(orderNumber string, userID uint) (Order, bool,
 	return order, true, result.Error
 }
 
-func (r GormRepository) GetOrders(userID uint) (*[]Order, error) {
+func (r GormRepository) GetOrders(userID uint) (*[]OrderAccrual, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	var orders []Order
-	result := r.DB.WithContext(ctx).Order("uploaded_at desc").Where("user_id = ?", userID).Find(&orders)
-	logger.Log.Debug("", zap.Any("orders", orders))
+	var orders []OrderAccrual
+	result := r.DB.WithContext(ctx).Table("orders").Select("orders.order_number, orders.status, orders.updated_at, transactions.value as Accrual").Joins("left join transactions on transactions.order_id = orders.id").Order(`"orders"."updated_at" DESC`).Where(`"orders"."user_id" = ? AND "transactions"."transaction_type" = ?`, userID, "a").Scan(&orders)
+	logger.Log.Debug("(r GormRepository) GetOrders", zap.Any("orders", orders))
 	return &orders, result.Error
 }
 
@@ -191,4 +191,44 @@ func (r GormRepository) GetWithdrawals(userID uint) (*[]Transaction, error) {
 	var withdrawals []Transaction
 	result := r.DB.WithContext(ctx).Table("transactions").Order(`"transactions"."processed_at" desc`).Where(`"transactions"."transaction_type" = ? AND "transactions"."order_id" IN (?)`, "w", r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Find(&withdrawals)
 	return &withdrawals, result.Error
+}
+
+func (r GormRepository) UpdateOrderStatus(orderNumber string, userID uint, status string, accrual float32) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+	if err := tx.Error; err != nil {
+		return err
+	}
+	updateResult := r.DB.WithContext(ctx).Model(&Order{}).Where("order_number = ? AND user_id = ?", orderNumber, userID).Updates(Order{Status: status})
+	if updateResult.Error != nil {
+		return updateResult.Error
+	}
+	if status == "PROCESSED" {
+		order, err := r.GetOrderbyNumber(orderNumber)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		trans := Transaction{OrderID: (*order).ID, TransactionType: "a", Value: accrual}
+		saveResult := r.DB.WithContext(ctx).Create(&trans)
+		if saveResult.Error != nil {
+			tx.Rollback()
+			return saveResult.Error
+		}
+	}
+	return tx.Commit().Error
+}
+
+func (r GormRepository) GetOrderbyNumber(orderNumber string) (*Order, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	var order Order
+	result := r.DB.WithContext(ctx).Where("order_number = ?", orderNumber).First(&order)
+	return &order, result.Error
 }

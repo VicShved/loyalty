@@ -33,18 +33,18 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/user/orders
+POST http://localhost:8000/api/user/orders
 Content-Type: text/plain
 Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
 
-12345678901
+66636614
 
 ###
-GET http://localhost:8080/api/user/orders
+GET http://localhost:8000/api/user/orders
 Content-Length: 0
 # Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
-Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjh9.6Z3ybXPRbHt4Cro9SbPFCo3B5ltRp0MdptMiX3_OV2tOADoBZvoBqLwPDiFDOTOl0z8XymHzJLmfZFp4w17DiA
-# Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
+# Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjh9.6Z3ybXPRbHt4Cro9SbPFCo3B5ltRp0MdptMiX3_OV2tOADoBZvoBqLwPDiFDOTOl0z8XymHzJLmfZFp4w17DiA
+Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
 
 ###
 GET http://localhost:8080/api/user/balance

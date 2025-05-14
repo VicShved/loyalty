@@ -58,15 +58,30 @@ func (s *ShortenService) Login(login string, password string) (uint, error) {
 
 func (s *ShortenService) SaveOrder(orderNumber string, userID uint) (repository.Order, bool, error) {
 	order, isNew, err := (*s).repo.SaveOrder(orderNumber, userID)
-	if (isNew) && (err != nil) {
-		s.orderChan <- accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
+	if err != nil {
+		return repository.Order{}, false, err
 	}
+	orderUser := accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
+	s.orderChan <- orderUser
+	logger.Log.Debug("SaveOrder", zap.Any("to chan", orderUser))
 	return order, isNew, err
 }
 
-func (s *ShortenService) GetOrders(userID uint) (*[]repository.Order, error) {
+type Order struct {
+	Number     string    `json:"number"`
+	Status     string    `json:"status"`
+	Accrual    float32   `json:"accrual"`
+	UploadedAt time.Time `json:"uploaded_at"`
+}
+
+func (s *ShortenService) GetOrders(userID uint) (*[]Order, error) {
 	orders, err := (*s).repo.GetOrders(userID)
-	return orders, err
+	var results []Order
+	for _, ord := range *orders {
+		res := Order{Number: ord.OrderNumber, Status: ord.Status, Accrual: ord.Accrual, UploadedAt: ord.UpdatedAt}
+		results = append(results, res)
+	}
+	return &results, err
 
 }
 
@@ -89,7 +104,7 @@ func (s *ShortenService) GetWithdrawTransactions(userID uint) (*[]WithDrawTransa
 	transactions, err := s.repo.GetWithdrawals(userID)
 	var results []WithDrawTransaction
 	for _, transaction := range *transactions {
-		results = append(results, WithDrawTransaction{Sum: transaction.Value, ProcessedAt: transaction.ProcessedAt})
+		results = append(results, WithDrawTransaction{Sum: transaction.Value, ProcessedAt: transaction.CreatedAt})
 	}
 	return &results, err
 }

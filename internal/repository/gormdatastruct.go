@@ -5,8 +5,8 @@ import (
 )
 
 type Model struct {
-	ID        uint `gorm:"primarykey"`
-	CreatedAt time.Time
+	ID        uint      `gorm:"primarykey"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
 type User struct {
@@ -22,7 +22,7 @@ type Order struct {
 	UserID       uint
 	Transactions []Transaction
 	Status       string    `gorm:"size:16"`
-	UploadedAt   time.Time `gorm:"autoCreateTime"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
 }
 
 type Transaction struct {
@@ -30,5 +30,11 @@ type Transaction struct {
 	OrderID         uint    `gorm:"not null"`
 	TransactionType string  `gorm:"size:1"`
 	Value           float32 `gorm:"type:numeric(8,2)"`
-	ProcessedAt     time.Time
+}
+
+type OrderAccrual struct {
+	OrderNumber string
+	Status      string
+	UpdatedAt   time.Time
+	Accrual     float32
 }

@@ -16,8 +16,8 @@ type ServerConfigStruct struct {
 var ServerConfig ServerConfigStruct
 
 func GetServerConfig() *ServerConfigStruct {
-	flag.StringVar(&ServerConfig.RunAddress, "a", "localhost:8080", "Run address")
-	flag.StringVar(&ServerConfig.AccuralSystemAddress, "r", "", "AccuralSystemAddress")
+	flag.StringVar(&ServerConfig.RunAddress, "a", "localhost:8000", "Run address")
+	flag.StringVar(&ServerConfig.AccuralSystemAddress, "r", "http://localhost:8080", "AccuralSystemAddress")
 	// host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable
 	flag.StringVar(&ServerConfig.DBDSN, "d", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable", "DataBase DSN")
 	flag.StringVar(&ServerConfig.SecretKey, "s", "VeryImpotantSecretKey.YesYes", "Secret key")

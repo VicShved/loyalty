@@ -32,7 +32,10 @@ func main() {
 	orderChan := make(chan accrual.OrderUser, 100) // TODO 100 replace to config
 	defer close(orderChan)
 
-	// Bussiness layer (empty)
+	accrualService := accrual.GetAccrualService(orderChan, config.AccuralSystemAddress, &repo)
+	go accrualService.ProcessAccrualService()
+
+	// Bussiness layer
 	serv := service.GetService(repo, config.AccuralSystemAddress, &orderChan)
 
 	// Handlers
