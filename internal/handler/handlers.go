@@ -181,6 +181,10 @@ func (h Handler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	// Вытаскиваю userID из контекста
 	userID := r.Context().Value(common.ContextUser).(uint)
 	logger.Log.Debug("Context User ", zap.Uint("ID", userID))
+	if userID == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	orders, err := h.serv.GetOrders(userID)

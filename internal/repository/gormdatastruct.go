@@ -38,3 +38,10 @@ type OrderAccrual struct {
 	UpdatedAt   time.Time
 	Accrual     float32
 }
+
+type OrderTransaction struct {
+	OrderNumber     string
+	Sum             float32
+	ProcessedAt     time.Time
+	TransactionType string
+}

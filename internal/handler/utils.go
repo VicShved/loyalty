@@ -1,6 +1,9 @@
 package handler
 
-import "regexp"
+import (
+	// "regexp"
+	"strconv"
+)
 
 type loginPassword struct {
 	Login    string `json:"login"`
@@ -18,9 +21,13 @@ func ValidateLoginPassword(lp loginPassword) bool {
 }
 
 func isOnlyDigits(s string) bool {
-	var re = regexp.MustCompile(`^[0-9]+s`)
-	if re.MatchString(s) {
+	// var re = regexp.MustCompile(`^[0-9]+s`)
+	// if re.MatchString(s) {
+	// 	return true
+	// }
+	// return false // todo set false + fix re
+	if _, err := strconv.Atoi(s); err == nil {
 		return true
 	}
-	return true // todo set false + fix re
+	return false
 }

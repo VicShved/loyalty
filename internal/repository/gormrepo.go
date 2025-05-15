@@ -185,12 +185,12 @@ func (r GormRepository) SaveWithDraw(userID uint, orderNumber string, withDrawSu
 
 }
 
-func (r GormRepository) GetWithdrawals(userID uint) (*[]Transaction, error) {
+func (r GormRepository) GetWithdrawals(userID uint) (*[]OrderTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	var withdrawals []Transaction
-	result := r.DB.WithContext(ctx).Table("transactions").Order(`"transactions"."processed_at" desc`).Where(`"transactions"."transaction_type" = ? AND "transactions"."order_id" IN (?)`, "w", r.DB.Table("orders").Where(Order{UserID: userID}).Select(`"orders"."id"`)).Find(&withdrawals)
-	return &withdrawals, result.Error
+	var orderTrs []OrderTransaction
+	result := r.DB.WithContext(ctx).Table("orders").Select("orders.order_number, orders.updated_at, transactions.value as Sum, transactions.transaction_type").Joins("join transactions on transactions.order_id = orders.id").Order(`"orders"."updated_at" DESC`).Where(`"orders"."user_id" = ? AND "transactions"."transaction_type" = ?`, userID, "w").Scan(&orderTrs)
+	return &orderTrs, result.Error
 }
 
 func (r GormRepository) UpdateOrderStatus(orderNumber string, userID uint, status string, accrual float32) error {

@@ -61,9 +61,11 @@ func (s *ShortenService) SaveOrder(orderNumber string, userID uint) (repository.
 	if err != nil {
 		return repository.Order{}, false, err
 	}
-	orderUser := accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
-	s.orderChan <- orderUser
-	logger.Log.Debug("SaveOrder", zap.Any("to chan", orderUser))
+	if isNew {
+		orderUser := accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
+		s.orderChan <- orderUser
+		logger.Log.Debug("SaveOrder", zap.Any("to chan", orderUser))
+	}
 	return order, isNew, err
 }
 
@@ -104,7 +106,7 @@ func (s *ShortenService) GetWithdrawTransactions(userID uint) (*[]WithDrawTransa
 	transactions, err := s.repo.GetWithdrawals(userID)
 	var results []WithDrawTransaction
 	for _, transaction := range *transactions {
-		results = append(results, WithDrawTransaction{Sum: transaction.Value, ProcessedAt: transaction.CreatedAt})
+		results = append(results, WithDrawTransaction{OrderNumber: transaction.OrderNumber, Sum: transaction.Sum, ProcessedAt: transaction.ProcessedAt})
 	}
 	return &results, err
 }
