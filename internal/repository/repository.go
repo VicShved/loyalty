@@ -14,8 +14,8 @@ type RepoInterface interface {
 	Login(login string, hashPassword string) (uint, error)
 	SaveOrder(orderNumber string, userID uint) (Order, bool, error)
 	GetOrders(userID uint) (*[]OrderAccrual, error)
-	GetBalanceWithDrawn(user_id uint) (BalanceWithDrawnType, error)
-	GetBalance(user_id uint) (float32, error)
+	GetBalanceWithDrawn(userID uint) (BalanceWithDrawnType, error)
+	GetBalance(userID uint) (float32, error)
 	SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error)
 	GetWithdrawals(userID uint) (*[]OrderTransaction, error)
 	UpdateOrderStatus(orderNumber string, userID uint, status string, accrual float32) error

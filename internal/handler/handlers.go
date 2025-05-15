@@ -188,6 +188,10 @@ func (h Handler) GetOrders(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	orders, err := h.serv.GetOrders(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	if len(*orders) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -289,6 +293,10 @@ func (h Handler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	transactions, err := h.serv.GetWithdrawTransactions(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	if len(*transactions) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
