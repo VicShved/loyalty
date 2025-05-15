@@ -61,7 +61,7 @@ func (s *ShortenService) SaveOrder(orderNumber string, userID uint) (repository.
 	if err != nil {
 		return repository.Order{}, false, err
 	}
-	if isNew {
+	if isNew || order.Status == "" {
 		orderUser := accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
 		s.orderChan <- orderUser
 		logger.Log.Debug("SaveOrder", zap.Any("to chan", orderUser))
@@ -80,7 +80,7 @@ func (s *ShortenService) GetOrders(userID uint) (*[]Order, error) {
 	orders, err := (*s).repo.GetOrders(userID)
 	var results []Order
 	for _, ord := range *orders {
-		res := Order{Number: ord.OrderNumber, Status: ord.Status, Accrual: ord.Accrual, UploadedAt: ord.UpdatedAt}
+		res := Order{Number: ord.OrderNumber, Status: ord.Status, Accrual: ord.Value, UploadedAt: ord.UpdatedAt}
 		results = append(results, res)
 	}
 	return &results, err
@@ -89,6 +89,9 @@ func (s *ShortenService) GetOrders(userID uint) (*[]Order, error) {
 
 func (s *ShortenService) GetBalanceWithDrawn(userID uint) (repository.BalanceWithDrawnType, error) {
 	balance, err := (*s).repo.GetBalanceWithDrawn(userID)
+	if err == nil {
+		balance.Withdrawn = -balance.Withdrawn
+	}
 	return balance, err
 }
 
@@ -98,7 +101,16 @@ func (s *ShortenService) GetBalance(userID uint) (float32, error) {
 }
 
 func (s *ShortenService) SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error) {
+	balance, err := s.GetBalance(userID)
+	if err != nil {
+		return 0, err
+	}
+	if nextCurrent := (balance - withDrawSum); nextCurrent < 0 { // todo may be balabce <0 if goroutine
+		return nextCurrent, nil
+	}
+	logger.Log.Debug("", zap.Float32("balance", balance))
 	current, err := (*s).repo.SaveWithDraw(userID, orderID, -withDrawSum)
+
 	return current, err
 }
 
@@ -106,7 +118,7 @@ func (s *ShortenService) GetWithdrawTransactions(userID uint) (*[]WithDrawTransa
 	transactions, err := s.repo.GetWithdrawals(userID)
 	var results []WithDrawTransaction
 	for _, transaction := range *transactions {
-		results = append(results, WithDrawTransaction{OrderNumber: transaction.OrderNumber, Sum: transaction.Sum, ProcessedAt: transaction.ProcessedAt})
+		results = append(results, WithDrawTransaction{OrderNumber: transaction.OrderNumber, Sum: -transaction.Sum, ProcessedAt: transaction.ProcessedAt})
 	}
 	return &results, err
 }

@@ -83,7 +83,7 @@ func (r GormRepository) Login(login string, hashPassword string) (uint, error) {
 func (r GormRepository) SaveOrder(orderNumber string, userID uint) (Order, bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	order := Order{OrderNumber: orderNumber, UserID: userID}
+	order := Order{OrderNumber: orderNumber, UserID: userID, Status: "NEW"}
 	result := r.DB.WithContext(ctx).Create(&order)
 	if result.Error != nil {
 		// проверяем на ошибку дублирования
@@ -110,7 +110,7 @@ func (r GormRepository) GetOrders(userID uint) (*[]OrderAccrual, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	var orders []OrderAccrual
-	result := r.DB.WithContext(ctx).Table("orders").Select("orders.order_number, orders.status, orders.updated_at, transactions.value as Accrual").Joins("left join transactions on transactions.order_id = orders.id").Order(`"orders"."updated_at" DESC`).Where(`"orders"."user_id" = ? AND "transactions"."transaction_type" = ?`, userID, "a").Scan(&orders)
+	result := r.DB.WithContext(ctx).Table("orders").Select("orders.order_number, orders.status, orders.updated_at, transactions.value as Value").Joins("left join transactions on transactions.order_id = orders.id").Order(`"orders"."updated_at" DESC`).Where(`"orders"."user_id" = ?`, userID).Scan(&orders)
 	logger.Log.Debug("(r GormRepository) GetOrders", zap.Any("orders", orders))
 	return &orders, result.Error
 }
@@ -161,12 +161,18 @@ func (r GormRepository) SaveWithDraw(userID uint, orderNumber string, withDrawSu
 	result := r.DB.WithContext(ctx).Where("order_number = ? AND user_id = ?", orderNumber, userID).First(&order)
 	logger.Log.Debug("", zap.Any("order", order))
 	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// Если заказ у другого пользователя
-			return 0, ErrOrderNumberUserConflict
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return 0, result.Error
+		} else {
+			order.OrderNumber = orderNumber
+			order.UserID = userID
+			result = r.DB.WithContext(ctx).Create(&order)
+			if result.Error != nil {
+				return 0, result.Error
+			}
 		}
-		return 0, result.Error
 	}
+
 	result = r.DB.WithContext(ctx).Create(&Transaction{OrderID: order.ID, Value: withDrawSum, TransactionType: "w"})
 	if result.Error != nil {
 		return 0, result.Error

@@ -262,17 +262,6 @@ func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	balance, err := h.serv.GetBalance(userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if (balance - orderSum.Sum) < 0 { // todo may be balabce <0 if goroutine
-		w.WriteHeader(http.StatusPaymentRequired)
-		return
-	}
-	logger.Log.Debug("", zap.Float32("balance", balance))
-
 	current, err := h.serv.SaveWithDraw(userID, orderSum.Order, orderSum.Sum)
 	if err != nil {
 		if errors.Is(err, repository.ErrOrderNumberUserConflict) {
@@ -282,7 +271,6 @@ func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	if current < 0 {
 		w.WriteHeader(http.StatusPaymentRequired)
 		return

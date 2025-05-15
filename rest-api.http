@@ -54,7 +54,7 @@ Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjF9.PMeum23XZvp
 # Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjl9.a1MYZ_35WWirj3Hqybt-ni1JSSz3udueZpqKrW5bMqXdUL6jOdBGTmGHRmEVPvV_dulMaQnDWEwYEzhEzkBIFw
 
 ###
-POST http://localhost:8080/api/user/balance/withdraw
+POST http://localhost:8000/api/user/balance/withdraw
 Content-Type: application/json
 Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjF9.PMeum23XZvpp86IQAWZr8Kjhgm0InvCZqdt1ECffiFn14FC9TUwDDbXLAHDuBnr1s20yinb1Nq8ir_b31kz0hA
 # Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjh9.6Z3ybXPRbHt4Cro9SbPFCo3B5ltRp0MdptMiX3_OV2tOADoBZvoBqLwPDiFDOTOl0z8XymHzJLmfZFp4w17DiA
@@ -100,11 +100,12 @@ Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjY3fQ.CSl8cOx4I
 
 ###
 POST http://localhost:8000/api/user/orders HTTP/1.1
-Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjY5fQ.3bQUkaxJ6uzZnXqsXNp9_9YNTaVcg5fdiSM6cHLzF4aPKs3_a0kEaaEqyjOv6in-N7eB97uaoRjnQZMKhPDe3w
+Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjkzfQ.T5UokXmhI_tUUj2F9H_Q1U61gFkEZZJUxzNvpRVC8HWi9qMGRmr9cGFnaFo9rqKQ6SN82SmlzjAaNle1fijoKw
 Content-Type: text/plain
 User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
 
-00012345678902
+
+12345678902
 
 ###
 POST http://localhost:8000/api/user/balance/withdraw HTTP/1.1
@@ -118,3 +119,8 @@ User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
                         "order": "5233275",
                 "sum": 263.98
                 }
+
+###
+GET http://localhost:8000/api/user/orders HTTP/1.1
+Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjkzfQ.T5UokXmhI_tUUj2F9H_Q1U61gFkEZZJUxzNvpRVC8HWi9qMGRmr9cGFnaFo9rqKQ6SN82SmlzjAaNle1fijoKw
+User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
