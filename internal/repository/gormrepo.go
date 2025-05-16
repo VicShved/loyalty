@@ -16,6 +16,7 @@ type GormRepository struct {
 }
 
 func GetGormDB(dns string) (*gorm.DB, error) {
+	logger.Log.Info("GetGormDB", zap.String("DSN", dns))
 	db, err := gorm.Open(postgres.Open(dns), &gorm.Config{TranslateError: true})
 	return db, err
 }

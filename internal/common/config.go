@@ -34,7 +34,7 @@ func GetServerConfig() *ServerConfigStruct {
 		ServerConfig.AccuralSystemAddress = value
 	}
 
-	value, exists = os.LookupEnv("DATABASE_DSN")
+	value, exists = os.LookupEnv("DATABASE_URI")
 	if exists {
 		ServerConfig.DBDSN = value
 	}
