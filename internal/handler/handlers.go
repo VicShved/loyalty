@@ -85,7 +85,7 @@ func (h Handler) PingDB(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) PostRegister(w http.ResponseWriter, r *http.Request) {
-	var logPass loginPassword
+	var logPass service.LoginPassword
 	body, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	err := json.Unmarshal(body, &logPass)
@@ -93,7 +93,7 @@ func (h Handler) PostRegister(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if !ValidateLoginPassword(logPass) {
+	if !service.ValidateLoginPassword(logPass) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -112,7 +112,7 @@ func (h Handler) PostRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) PostLogin(w http.ResponseWriter, r *http.Request) {
-	var logPass loginPassword
+	var logPass service.LoginPassword
 	body, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	err := json.Unmarshal(body, &logPass)
@@ -120,7 +120,7 @@ func (h Handler) PostLogin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if !ValidateLoginPassword(logPass) {
+	if !service.ValidateLoginPassword(logPass) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -156,10 +156,16 @@ func (h Handler) PostOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger.Log.Debug("", zap.String("orderNumber", orderNumber))
-	if !isOnlyDigits(orderNumber) {
+	if !service.IsOnlyDigits(orderNumber) { // || !service.CheckLuhn(orderNumber)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
+	if !service.CheckLuhn(orderNumber) { // ||
+		logger.Log.Warn("CheckLuhn", zap.String("check bad", orderNumber))
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
 	_, isNew, err := h.serv.SaveOrder(orderNumber, userID)
 
 	if err != nil {
@@ -261,7 +267,7 @@ func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if !isOnlyDigits(orderSum.Order) {
+	if !service.IsOnlyDigits(orderSum.Order) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

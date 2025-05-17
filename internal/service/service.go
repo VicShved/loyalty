@@ -80,8 +80,10 @@ func (s *ShortenService) GetOrders(userID uint) (*[]Order, error) {
 	orders, err := (*s).repo.GetOrders(userID)
 	var results []Order
 	for _, ord := range *orders {
-		res := Order{Number: ord.OrderNumber, Status: ord.Status, Accrual: ord.Value, UploadedAt: ord.UpdatedAt}
-		results = append(results, res)
+		if len(ord.Status) > 0 {
+			res := Order{Number: ord.OrderNumber, Status: ord.Status, Accrual: ord.Value, UploadedAt: ord.UpdatedAt}
+			results = append(results, res)
+		}
 	}
 	return &results, err
 

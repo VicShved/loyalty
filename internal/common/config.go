@@ -28,6 +28,9 @@ func GetServerConfig() *ServerConfigStruct {
 	if exists {
 		ServerConfig.RunAddress = value
 	}
+	if ServerConfig.RunAddress == "" {
+		ServerConfig.RunAddress = "localhost:8000"
+	}
 
 	value, exists = os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS")
 	if exists {
