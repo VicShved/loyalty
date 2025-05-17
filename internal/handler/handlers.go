@@ -160,11 +160,11 @@ func (h Handler) PostOrders(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
-	if !service.CheckLuhn(orderNumber) { // ||
-		logger.Log.Warn("CheckLuhn", zap.String("check bad", orderNumber))
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
+	// if !service.CheckLuhn(orderNumber) { // ||
+	// 	logger.Log.Warn("CheckLuhn", zap.String("check bad", orderNumber))
+	// 	w.WriteHeader(http.StatusUnprocessableEntity)
+	// 	return
+	// }
 
 	_, isNew, err := h.serv.SaveOrder(orderNumber, userID)
 
