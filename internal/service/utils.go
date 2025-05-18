@@ -36,7 +36,7 @@ func CheckLuhn(s string) bool {
 	for i, ch := range s {
 		digit := int(ch)
 		if i%2 == parity {
-			digit := digit * 2
+			digit = digit * 2
 			if digit > 9 {
 				digit = digit - 9
 			}

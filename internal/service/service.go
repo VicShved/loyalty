@@ -1,6 +1,7 @@
 package service
 
 import (
+	"slices"
 	"time"
 
 	"github.com/VicShved/loyalty/internal/accrual"
@@ -37,6 +38,13 @@ type WithDrawTransaction struct {
 	ProcessedAt time.Time `json:"processed_at"`
 }
 
+type Order struct {
+	Number     string    `json:"number"`
+	Status     string    `json:"status"`
+	Accrual    float32   `json:"accrual"`
+	UploadedAt time.Time `json:"uploaded_at"`
+}
+
 func GetService(repo repository.RepoInterface, accrualAddress string, orderChan *chan accrual.OrderUser) *ShortenService {
 	return &ShortenService{repo: repo, accrualAddress: accrualAddress, orderChan: *orderChan}
 }
@@ -67,13 +75,6 @@ func (s *ShortenService) SaveOrder(orderNumber string, userID uint) (repository.
 		logger.Log.Debug("SaveOrder", zap.Any("to chan", orderUser))
 	}
 	return order, isNew, err
-}
-
-type Order struct {
-	Number     string    `json:"number"`
-	Status     string    `json:"status"`
-	Accrual    float32   `json:"accrual"`
-	UploadedAt time.Time `json:"uploaded_at"`
 }
 
 func (s *ShortenService) GetOrders(userID uint) (*[]Order, error) {
@@ -123,4 +124,15 @@ func (s *ShortenService) GetWithdrawTransactions(userID uint) (*[]WithDrawTransa
 		results = append(results, WithDrawTransaction{OrderNumber: transaction.OrderNumber, Sum: -transaction.Sum, ProcessedAt: transaction.ProcessedAt})
 	}
 	return &results, err
+}
+
+func (s *ShortenService) InitAccrualProcess() error {
+	orders, err := (*s).repo.GetOrders(0)
+	for _, ord := range *orders {
+		if slices.Contains([]string{"NEW", "PROCESSING"}, ord.Status) {
+			orderUser := accrual.OrderUser{OrderNumber: ord.OrderNumber, UserID: ord.UserID}
+			s.orderChan <- orderUser
+		}
+	}
+	return err
 }

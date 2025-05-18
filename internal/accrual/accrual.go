@@ -68,7 +68,8 @@ func (s *AccrualService) processOrderAccrual(orderNumber string, userID uint) {
 	body, err := io.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-
+		logger.Log.Error("", zap.String("ReadBody", err.Error()))
+		s.orderChan <- OrderUser{OrderNumber: orderNumber, UserID: userID}
 		return
 	}
 
@@ -80,7 +81,9 @@ func (s *AccrualService) processOrderAccrual(orderNumber string, userID uint) {
 		s.orderChan <- OrderUser{OrderNumber: orderNumber, UserID: userID}
 		return
 	}
-
+	if bodyData.Status == "REGISTERED" {
+		bodyData.Status = "PROCESSING"
+	}
 	err = s.repo.UpdateOrderStatus(orderNumber, userID, bodyData.Status, bodyData.Accrual)
 	if err != nil {
 		s.orderChan <- OrderUser{OrderNumber: orderNumber, UserID: userID}

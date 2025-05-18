@@ -99,7 +99,7 @@ Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjY3fQ.CSl8cOx4I
 
 
 ###
-POST http://localhost:8000/api/user/orders HTTP/1.1
+POST http://localhost:8000/api/user/orders
 Authorization: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjkzfQ.T5UokXmhI_tUUj2F9H_Q1U61gFkEZZJUxzNvpRVC8HWi9qMGRmr9cGFnaFo9rqKQ6SN82SmlzjAaNle1fijoKw
 Content-Type: text/plain
 User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)

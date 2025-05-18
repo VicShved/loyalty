@@ -37,6 +37,7 @@ type OrderAccrual struct {
 	Status      string
 	UpdatedAt   time.Time
 	Value       float32
+	UserID      uint
 }
 
 type OrderTransaction struct {

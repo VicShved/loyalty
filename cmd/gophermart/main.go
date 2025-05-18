@@ -38,6 +38,12 @@ func main() {
 	// Bussiness layer
 	serv := service.GetService(repo, config.AccuralSystemAddress, &orderChan)
 
+	// Add unprocessed orders from DB to accrual process
+	err = serv.InitAccrualProcess()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Handlers
 	handler := handler.GetHandler(serv)
 
