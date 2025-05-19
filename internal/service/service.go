@@ -130,8 +130,10 @@ func (s *ShortenService) InitAccrualProcess() error {
 	orders, err := (*s).repo.GetOrders(0)
 	for _, ord := range *orders {
 		if slices.Contains([]string{"NEW", "PROCESSING"}, ord.Status) {
-			orderUser := accrual.OrderUser{OrderNumber: ord.OrderNumber, UserID: ord.UserID}
-			s.orderChan <- orderUser
+			orderUser := new(accrual.OrderUser)
+			orderUser.OrderNumber = ord.OrderNumber
+			orderUser.UserID = ord.UserID
+			s.orderChan <- *orderUser
 		}
 	}
 	return err

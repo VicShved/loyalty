@@ -39,12 +39,12 @@ func (s *AccrualService) processOrderAccrual(orderNumber string, userID uint) {
 	uri := s.accrualAddress + "/api/orders/" + orderNumber
 	logger.Log.Debug("processOrderAccrual", zap.String("uri", uri))
 	response, err := client.Get(uri)
-	logger.Log.Debug("processOrderAccrual", zap.String("response", response.Status))
 	if err != nil {
 		s.orderChan <- OrderUser{OrderNumber: orderNumber, UserID: userID}
 		logger.Log.Error("processOrderAccrual", zap.String("client.Get", err.Error()))
 		return
 	}
+	logger.Log.Debug("processOrderAccrual", zap.String("response", response.Status))
 	if response.StatusCode == http.StatusNoContent {
 		// s.orderChan <- OrderUser{OrderNumber: orderNumber, UserID: userID}
 		return
@@ -100,7 +100,7 @@ func (s *AccrualService) ProcessAccrualService() {
 	logger.Log.Info("ProcessAccrualService", zap.String("orderUser", "Enter to goroutine"))
 	for orderUser := range s.orderChan {
 		logger.Log.Info("ProcessAccrualService", zap.Any("orderUser", orderUser))
-		go s.processOrderAccrual(orderUser.OrderNumber, orderUser.UserID)
+		go (*s).processOrderAccrual(orderUser.OrderNumber, orderUser.UserID)
 	}
 	logger.Log.Error("ProcessAccrualService", zap.String("orderUser", "EXIT from goroutine"))
 }

@@ -107,7 +107,6 @@ func (h Handler) PostRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// setAuthCook(w, userID)
 	setAuthHeader(w, userID)
 }
 
@@ -156,12 +155,8 @@ func (h Handler) PostOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger.Log.Debug("", zap.String("orderNumber", orderNumber))
-	// if !service.IsOnlyDigits(orderNumber) { // || !service.CheckLuhn(orderNumber)
-	// 	w.WriteHeader(http.StatusUnprocessableEntity)
-	// 	return
-	// }
+
 	if !service.CheckLuhn(orderNumber) {
-		logger.Log.Warn("CheckLuhn", zap.String("check bad", orderNumber))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
@@ -267,10 +262,7 @@ func (h Handler) PostWithDraw(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// if !service.IsOnlyDigits(orderSum.Order) {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	return
-	// }
+
 	if !service.CheckLuhn(orderSum.Order) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return

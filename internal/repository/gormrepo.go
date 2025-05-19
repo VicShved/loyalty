@@ -111,7 +111,7 @@ func (r GormRepository) GetOrders(userID uint) (*[]OrderAccrual, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	var orders []OrderAccrual
-	query := r.DB.WithContext(ctx).Table("orders").Select("orders.order_number, orders.status, orders.updated_at, transactions.value as Value").Joins("left join transactions on transactions.order_id = orders.id").Order(`"orders"."updated_at" DESC`)
+	query := r.DB.WithContext(ctx).Table("orders").Select("orders.order_number, orders.status, orders.updated_at, transactions.value as Value, orders.user_id").Joins("left join transactions on transactions.order_id = orders.id").Order(`"orders"."updated_at" DESC`)
 	// add userid filter
 	if userID > 0 {
 		query = query.Where(`"orders"."user_id" = ?`, userID)
