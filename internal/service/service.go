@@ -1,0 +1,140 @@
+package service
+
+import (
+	"slices"
+	"time"
+
+	"github.com/VicShved/loyalty/internal/accrual"
+	"github.com/VicShved/loyalty/internal/common"
+	"github.com/VicShved/loyalty/internal/logger"
+	"github.com/VicShved/loyalty/internal/repository"
+	"go.uber.org/zap"
+)
+
+type BatchReqJSON struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+type BatchRespJSON struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
+
+type UserURLRespJSON struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+type ShortenService struct {
+	repo           repository.RepoInterface
+	accrualAddress string
+	orderChan      chan accrual.OrderUser
+}
+
+type WithDrawTransaction struct {
+	OrderNumber string    `json:"order"`
+	Sum         float32   `json:"sum"`
+	ProcessedAt time.Time `json:"processed_at"`
+}
+
+type Order struct {
+	Number     string    `json:"number"`
+	Status     string    `json:"status"`
+	Accrual    float32   `json:"accrual"`
+	UploadedAt time.Time `json:"uploaded_at"`
+}
+
+func GetService(repo repository.RepoInterface, accrualAddress string, orderChan *chan accrual.OrderUser) *ShortenService {
+	return &ShortenService{repo: repo, accrualAddress: accrualAddress, orderChan: *orderChan}
+}
+
+func (s *ShortenService) Ping() error {
+	return s.repo.Ping()
+}
+
+func (s *ShortenService) Register(login string, password string) (uint, error) {
+	userID, err := (*s).repo.Register(login, common.HashSha256(password))
+	logger.Log.Debug("", zap.Uint("userID", userID), zap.Any("err", err))
+	return userID, err
+}
+
+func (s *ShortenService) Login(login string, password string) (uint, error) {
+	userID, err := (*s).repo.Login(login, common.HashSha256(password))
+	return userID, err
+}
+
+func (s *ShortenService) SaveOrder(orderNumber string, userID uint) (repository.Order, bool, error) {
+	order, isNew, err := (*s).repo.SaveOrder(orderNumber, userID)
+	if err != nil {
+		return repository.Order{}, false, err
+	}
+	if isNew || order.Status == "" {
+		orderUser := accrual.OrderUser{OrderNumber: orderNumber, UserID: userID}
+		s.orderChan <- orderUser
+		logger.Log.Debug("SaveOrder", zap.Any("to chan", orderUser))
+	}
+	return order, isNew, err
+}
+
+func (s *ShortenService) GetOrders(userID uint) (*[]Order, error) {
+	orders, err := (*s).repo.GetOrders(userID)
+	var results []Order
+	for _, ord := range *orders {
+		if len(ord.Status) > 0 {
+			res := Order{Number: ord.OrderNumber, Status: ord.Status, Accrual: ord.Value, UploadedAt: ord.UpdatedAt}
+			results = append(results, res)
+		}
+	}
+	return &results, err
+
+}
+
+func (s *ShortenService) GetBalanceWithDrawn(userID uint) (repository.BalanceWithDrawnType, error) {
+	balance, err := (*s).repo.GetBalanceWithDrawn(userID)
+	if err == nil {
+		balance.Withdrawn = -balance.Withdrawn
+	}
+	return balance, err
+}
+
+func (s *ShortenService) GetBalance(userID uint) (float32, error) {
+	balance, err := (*s).repo.GetBalance(userID)
+	return balance, err
+}
+
+func (s *ShortenService) SaveWithDraw(userID uint, orderID string, withDrawSum float32) (float32, error) {
+	balance, err := s.GetBalance(userID)
+	if err != nil {
+		return 0, err
+	}
+	if nextCurrent := (balance - withDrawSum); nextCurrent < 0 { // todo may be balabce <0 if goroutine
+		return nextCurrent, nil
+	}
+	logger.Log.Debug("", zap.Float32("balance", balance))
+	current, err := (*s).repo.SaveWithDraw(userID, orderID, -withDrawSum)
+
+	return current, err
+}
+
+func (s *ShortenService) GetWithdrawTransactions(userID uint) (*[]WithDrawTransaction, error) {
+	transactions, err := s.repo.GetWithdrawals(userID)
+	var results []WithDrawTransaction
+	for _, transaction := range *transactions {
+		results = append(results, WithDrawTransaction{OrderNumber: transaction.OrderNumber, Sum: -transaction.Sum, ProcessedAt: transaction.ProcessedAt})
+	}
+	return &results, err
+}
+
+func (s *ShortenService) InitAccrualProcess() error {
+	orders, err := (*s).repo.GetOrders(0)
+	for _, ord := range *orders {
+		if slices.Contains([]string{"NEW", "PROCESSING"}, ord.Status) {
+			orderUser := new(accrual.OrderUser)
+			orderUser.OrderNumber = ord.OrderNumber
+			orderUser.UserID = ord.UserID
+			s.orderChan <- *orderUser
+		}
+	}
+	return err
+}
